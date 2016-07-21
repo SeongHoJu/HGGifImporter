@@ -1,0 +1,21 @@
+{
+	"FileVersion" : 3,
+	"Version" : 1,
+	"VersionName" : "1.0",	
+	"FriendlyName" : "HG GifFile Importer",
+	"Description" : "GifFile to Paper2D Flipbook",
+	"Category" : "Editor",
+	"DocsURL" : "",
+	"MarketplaceURL" : "",
+	"CreatedBy" : "hakgu87",
+	"CreatedByURL" : "",
+	"EnabledByDefault" : true,
+	"Modules" :
+	[
+		{
+			"Name" : "HGGifImporter",
+			"Type" : "Editor",
+			"LoadingPhase" : "Default"
+		}
+	]
+}

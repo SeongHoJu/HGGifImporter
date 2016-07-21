@@ -1,0 +1,12 @@
+C:\Root\PluginBase\Plugins\GifConverter\Dll\Debug\GifConverter.dll
+C:\Root\PluginBase\Plugins\GifConverter\Dll\Debug\GifConverter.pdb
+C:\Root\PluginBase\Plugins\GifConverter\GifConverter\obj\x64\Release\GifConverter.csprojResolveAssemblyReference.cache
+C:\Root\PluginBase\Plugins\GifConverter\GifConverter\obj\x64\Release\GifConverter.dll
+C:\Root\PluginBase\Plugins\GifConverter\GifConverter\obj\x64\Release\GifConverter.pdb
+C:\Root\PluginBase\Plugins\GifConverter\Dll\Release\GifConverter.dll
+C:\Root\PluginBase\Plugins\GifConverter\Dll\Release\GifConverter.pdb
+C:\Root\PluginBase - 복사본\Plugins\GifConverter\Dll\Release\GifConverter.dll
+C:\Root\PluginBase - 복사본\Plugins\GifConverter\Dll\Release\GifConverter.pdb
+C:\Root\PluginBase - 복사본\Plugins\GifConverter\GifConverter\obj\x64\Release\GifConverter.csprojResolveAssemblyReference.cache
+C:\Root\PluginBase - 복사본\Plugins\GifConverter\GifConverter\obj\x64\Release\GifConverter.dll
+C:\Root\PluginBase - 복사본\Plugins\GifConverter\GifConverter\obj\x64\Release\GifConverter.pdb
