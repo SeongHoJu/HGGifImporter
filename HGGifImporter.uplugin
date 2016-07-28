@@ -1,15 +1,20 @@
 {
 	"FileVersion" : 3,
 	"Version" : 1,
-	"VersionName" : "1.0",	
+	"VersionName" : "1.0",
 	"FriendlyName" : "HG GifFile Importer",
 	"Description" : "GifFile to Paper2D Flipbook",
 	"Category" : "Editor",
-	"DocsURL" : "",
-	"MarketplaceURL" : "",
 	"CreatedBy" : "hakgu87",
 	"CreatedByURL" : "",
+	"DocsURL" : "",
+	"MarketplaceURL" : "com.epicgames.launcher://ue/marketplace/content/4b62266dcb0c4ffaac8e7ebdc61b4fba",
+	"SupportURL" : "mailto:hakgu87@gmail.com",
 	"EnabledByDefault" : true,
+	"CanContainContent" : false,
+	"IsBetaVersion" : false,
+	"Installed" : true,
+	"RequiresBuildPlatform" : false,
 	"Modules" :
 	[
 		{

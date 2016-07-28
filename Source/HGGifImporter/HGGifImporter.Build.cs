@@ -29,8 +29,8 @@ namespace UnrealBuildTool.Rules
                     "Paper2D",
                     "Paper2DEditor",
                     "ContentBrowser",
-                    "AssetTools"
-					
+                    "AssetTools",
+                    "Projects"
 				}
 				);
 

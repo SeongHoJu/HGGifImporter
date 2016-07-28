@@ -3,6 +3,7 @@
 
 #include "HGGifImporterPrivatePCH.h"
 
+#include "IPluginManager.h"
 #include "ContentBrowserModule.h"
 #include "AssetToolsModule.h"
 #include "Factories/Factory.h"
@@ -32,7 +33,6 @@ UHGGifFactory::UHGGifFactory(const FObjectInitializer& ObjectInitializer)
 	}
 }
 
-
 UObject* UHGGifFactory::FactoryCreateBinary
 (
 	UClass*				Class,
@@ -47,6 +47,11 @@ UObject* UHGGifFactory::FactoryCreateBinary
 	)
 {
 	check(Type);
+
+	if (GenerateConverterDll() == false)
+	{
+		return nullptr;
+	}
 
 	// 1. Copy Gif File to Buffer
 	const int32 Length = BufferEnd - Buffer;
@@ -83,12 +88,27 @@ bool UHGGifFactory::DecodeGifFile(const TArray<uint8>& GifBytes, TArray<FBinaryI
 {
 	if (GeneratedDllHandle != nullptr)
 	{
-		/*
-		@Param : GifBinaries - Gif File Binary Address
-		@Param : BinarySize - Gif File Size
-		@Param : _CallbackRequestBitmapAlloc - Callback function After
-		*/
-		if (GifDecodeFunction((void*)GifBytes.GetData(), (int32)GifBytes.Num(), CallbackRequestAlloc))
+		if (GifDecodeFunction((void*)GifBytes.GetData(), (int32)GifBytes.Num(), 
+			[](int32 FrameIndex, int64 ImageSize)->void*	// Lamda Begin - Called From C# dll(GifConverter)
+			{
+				if (ImageSize > 0)
+				{
+					void* AllocMemory = FMemory::Malloc(ImageSize);
+					if (static_cast<uint8*>(AllocMemory) != nullptr)
+					{
+						FBinaryImage NewBinary;
+						NewBinary.AllocAddress = static_cast<uint8*>(AllocMemory);
+						NewBinary.ImageSize = ImageSize;
+
+						UHGGifFactory::CachedBinaryImages.Add(NewBinary);
+
+						return AllocMemory;
+					}
+				}
+
+				return nullptr;
+			})// Lamda End
+		)// if end
 		{
 			// Copy Cached Image - Just Pointer, int64
 			GifFrames = UHGGifFactory::CachedBinaryImages;
@@ -103,64 +123,31 @@ bool UHGGifFactory::DecodeGifFile(const TArray<uint8>& GifBytes, TArray<FBinaryI
 }
 
 /*
-Called by C# Dll( GifConverter.dll )
-
-after GifBinary is Decoded, C# dll call this function each gif frameimage
-
-*/
-void* UHGGifFactory::CallbackRequestHeapAlloc(int32 FrameIndex, int64 ImageSize)
-{
-	/*
-	Param@ FrameIndex : Decoded Gif Image Frame
-	Param@ ImageSize : Decoded Gif Image Size
-	*/
-
-	if (ImageSize > 0)
-	{
-		void* AllocMemory = FMemory::Malloc(ImageSize);
-		if (static_cast<uint8*>(AllocMemory) != nullptr)
-		{
-			FBinaryImage NewBinary;
-			NewBinary.AllocAddress = static_cast<uint8*>(AllocMemory);
-			NewBinary.ImageSize = ImageSize;
-
-			UHGGifFactory::CachedBinaryImages.Add(NewBinary);
-
-			return AllocMemory;
-		}
-	}
-
-	return nullptr;
-}
-
-/*
 	Get Dll Handle & C# Function Address
 */
 bool UHGGifFactory::GenerateConverterDll()
 {
 	if (GeneratedDllHandle == nullptr)
 	{
-		FString DllPath = FPaths::Combine(*FPaths::EnginePluginsDir(), TEXT("Editor/HGGifImporter/Binaries/Win64/"), TEXT("GifConverter.dll"));
-		if (FPaths::FileExists(DllPath))
+		TSharedPtr<IPlugin> PluginPtr = IPluginManager::Get().FindPlugin(TEXT("HGGifImporter"));
+		if (PluginPtr.Get() != nullptr)
 		{
-			GeneratedDllHandle = FPlatformProcess::GetDllHandle(*DllPath); // Retrieve the DLL.
-			if (GeneratedDllHandle != nullptr)
+			FString DllPath(TEXT(""));
+			DllPath = FPaths::Combine(*(PluginPtr->GetBaseDir()), TEXT("Source/ThirdParty/GifConverter/Dll/Release/"), TEXT("GifConverter.dll"));
+			if (FPaths::FileExists(DllPath))
 			{
-				static FString procName = TEXT("GetGifInfo"); // The exact name of the DLL function.
-				GifDecodeFunction = (_DecodeFunction)FPlatformProcess::GetDllExport(GeneratedDllHandle, *procName); // Export the DLL function.
-				if (GifDecodeFunction != nullptr)
+				GeneratedDllHandle = FPlatformProcess::GetDllHandle(*DllPath); // Retrieve the DLL.
+				if (GeneratedDllHandle != nullptr)
 				{
-					CallbackRequestAlloc = UHGGifFactory::CallbackRequestHeapAlloc;
-					return true;
+					static FString procName = TEXT("DecodeGifToFrame"); // The exact name of the DLL function.
+					GifDecodeFunction = (_DecodeFunction)FPlatformProcess::GetDllExport(GeneratedDllHandle, *procName); // Export the DLL function.
 				}
 			}
 		}
 	}
 
-	return false;
+	return (GifDecodeFunction != nullptr) ? true : false;
 }
-
-
 
 bool UHGGifFactory::GenerateTextures(const TArray<FBinaryImage>& BinaryImages, /*out*/ TArray<UTexture2D*>& OutTextures, UObject* InParent, FName Name, const TCHAR* Type, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn)
 {
@@ -239,8 +226,6 @@ UPaperFlipbook* UHGGifFactory::CreateFlipBook(const TArray<UPaperSprite*>& AllSp
 	if (AllSprites.Num() == 0)
 		return nullptr;
 
-	GWarn->BeginSlowTask(NSLOCTEXT("Paper2D", "Paper2D_CreateFlipbooks", "Creating flipbooks from selection"), true, true);
-
 	const FString& FlipbookName = BaseName.ToString();
 	TArray<UPaperSprite*> Sprites = AllSprites;	// Not Reference, for Save Pacakge
 
@@ -280,12 +265,11 @@ UPaperFlipbook* UHGGifFactory::CreateFlipBook(const TArray<UPaperSprite*>& AllSp
 		ContentBrowserModule.Get().SyncBrowserToAssets(ObjectsToSync);
 	}
 
-	GWarn->EndSlowTask();
-
 	return NewFlipBook;
 }
 
 
+// Use this Method isntead of CleanUp()
 void UHGGifFactory::CleanUpFactory(const TArray<FBinaryImage>& BinaryImages)
 {
 	for (const FBinaryImage& BinaryImage : BinaryImages)

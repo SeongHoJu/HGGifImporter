@@ -18,7 +18,7 @@ struct FBinaryImage
 	int64 ImageSize;
 };
 
-typedef void*(*_CallbackRequestBitmapAlloc)(int32 FrameIndex, int64 ImageSize);
+typedef void*(*_CallbackRequestBitmapAlloc)(int32 FrameIndex, int64 ImageSize);	// Pass to C# dll as a Ramda function
 typedef int32(*_DecodeFunction)(void* GifBinaires, int32 BinarySize, _CallbackRequestBitmapAlloc CallbackAlloc); // Declare the DLL function.
 
 
@@ -27,18 +27,21 @@ class HGGIFIMPORTER_API UHGGifFactory : public UTextureFactory
 {
 	GENERATED_UCLASS_BODY()
 	
+	~UHGGifFactory()
+	{
+		if (GeneratedDllHandle != nullptr)
+		{
+			FPlatformProcess::FreeDllHandle(GeneratedDllHandle);
+			GeneratedDllHandle = nullptr;
+		}
+	}
+
 	virtual UObject* FactoryCreateBinary(UClass* Class, UObject* InParent, FName Name, EObjectFlags Flags, UObject* Context, const TCHAR* Type, const uint8*& Buffer, const uint8* BufferEnd, FFeedbackContext* Warn) override;
 	
 	void*						GeneratedDllHandle;
 	_DecodeFunction				GifDecodeFunction;
-	_CallbackRequestBitmapAlloc CallbackRequestAlloc;
 
 	static TArray<FBinaryImage> CachedBinaryImages;
-
-	/*
-		Called by C# dll ( Register this function to C# dll(GifConverrter.dll) )
-	*/
-	static void* CallbackRequestHeapAlloc(int32 FrameIndex, int64 BitmapSize);
 
 	/*
 		Load Dll Module
